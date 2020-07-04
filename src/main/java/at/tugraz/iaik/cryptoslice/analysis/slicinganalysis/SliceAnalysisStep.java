@@ -25,7 +25,7 @@ public class SliceAnalysisStep extends Step {
       sliceAnalysisReport.add("cryptoRules", new Rule4(analysis).check());
       sliceAnalysisReport.add("cryptoRules", new Rule5(analysis).check());
       sliceAnalysisReport.add("cryptoRules", new Rule6(analysis).check());
-      sliceAnalysisReport.add("cryptoRules", new Rule7(analysis).check());
+      //sliceAnalysisReport.add("cryptoRules", new Rule7(analysis).check());
       sliceAnalysisReport.add("cryptoRules", new Rule8(analysis).check());
       sliceAnalysisReport.add("cryptoRules", new Rule9(analysis).check());
       sliceAnalysisReport.add("cryptoRules", new Rule10(analysis).check());
@@ -34,7 +34,7 @@ public class SliceAnalysisStep extends Step {
       sliceAnalysisReport.add("cryptoRules", new Rule13(analysis).check());
       sliceAnalysisReport.add("cryptoRules", new Rule14(analysis).check());
     } catch (DetectionLogicError e) {
-      throw new AnalysisException(e);
+      //throw new AnalysisException(e);
     }
 
     analysis.getReport().add("sliceAnalysis", sliceAnalysisReport.render());

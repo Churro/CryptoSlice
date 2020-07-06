@@ -22,7 +22,7 @@ public class FileList {
     }
 
     @Override
-    public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attrs) throws IOException {
+    public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attrs) {
       boolean hasAd = AdChecker.getInstance().containsAd(path.toAbsolutePath().toString());
       boolean hasCryptoLib = CryptoLibChecker.getInstance().containsCryptoLib(path.toFile().getAbsolutePath());
 
@@ -30,7 +30,7 @@ public class FileList {
     }
 
     @Override
-    public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+    public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
       if (suffix.equals("*") || path.getFileName().toString().toLowerCase().endsWith(suffix)) {
         filterFiles.add(path.toFile());
       }
@@ -39,13 +39,13 @@ public class FileList {
     }
 
     @Override
-    public FileVisitResult visitFileFailed(Path path, IOException exc) throws IOException {
+    public FileVisitResult visitFileFailed(Path path, IOException exc) {
       System.err.println("Error: Cannot visit path " + path);
       return FileVisitResult.CONTINUE;
     }
 
     @Override
-    public FileVisitResult postVisitDirectory(Path path, IOException e) throws IOException {
+    public FileVisitResult postVisitDirectory(Path path, IOException e) {
       return FileVisitResult.CONTINUE;
     }
   }

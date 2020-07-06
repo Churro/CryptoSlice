@@ -28,7 +28,7 @@ public class Analysis {
   private static final List<Step> ANALYSIS_STEPS = new ArrayList<>();
   private static final List<Step> CLEANUP_STEPS = new ArrayList<>();
 
-  private Application app;
+  private final Application app;
   private final List<AnalysisException> criticalExceptions = new ArrayList<>();
   private final List<AnalysisException> nonCriticalExceptions = new ArrayList<>();
   private Table<SlicingPattern, Integer, Set<Constant>> sliceConstants = HashBasedTable.create();

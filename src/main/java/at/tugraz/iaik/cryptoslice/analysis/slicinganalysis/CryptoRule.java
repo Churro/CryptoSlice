@@ -17,12 +17,7 @@ public abstract class CryptoRule {
   protected final ST ruleReport;
   protected final List<CodeLine> searchIds = new ArrayList<>();
 
-  private static Comparator<SliceNode> byFuzzyLevel = new Comparator<SliceNode>() {
-    @Override
-    public int compare(SliceNode left, SliceNode right) {
-      return Integer.compare(left.getConstant().getFuzzyLevel(), right.getConstant().getFuzzyLevel());
-    }
-  };
+  private static final Comparator<SliceNode> byFuzzyLevel = Comparator.comparingInt(left -> left.getConstant().getFuzzyLevel());
 
   public enum FILTER {
     ALLOW_EMPTY_VALUE, ALLOW_STRING, ALLOW_ARBITRARY_TYPES, ALLOW_EXTERNAL_METHOD, ALLOW_RESOURCE_INT, ALLOW_ARRAY, ALLOW_CONST_INT
@@ -45,7 +40,7 @@ public abstract class CryptoRule {
     return filtered;
   }
 
-  public static List<SliceNode> rankNodes(Collection<SliceNode> nodes, EnumSet filterPermissions) {
+  public static List<SliceNode> rankNodes(Collection<SliceNode> nodes, EnumSet<FILTER> filterPermissions) {
     List<SliceNode> resultNodes = new ArrayList<>();
 
     for (SliceNode node : nodes) {
@@ -78,7 +73,7 @@ public abstract class CryptoRule {
       }
     }
 
-    Collections.sort(resultNodes, byFuzzyLevel);
+    resultNodes.sort(byFuzzyLevel);
 
     return resultNodes;
   }

@@ -3,12 +3,16 @@ package at.tugraz.iaik.cryptoslice.analysis.slicing;
 import at.tugraz.iaik.cryptoslice.application.instructions.Constant;
 import at.tugraz.iaik.cryptoslice.application.methods.BasicBlock;
 import at.tugraz.iaik.cryptoslice.application.methods.Method;
-import com.google.common.base.Predicate;
-import com.google.common.collect.*;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SliceTree {
   private static final Logger LOGGER = LoggerFactory.getLogger(SliceTree.class);
@@ -20,12 +24,10 @@ public class SliceTree {
     final SliceNode node = new SliceNode(constant, bb, link, previousRegister);
 
     Collection<SliceNode> nodesForMethod = sliceNodes.get(constant.getCodeLine().getMethod());
-    SliceNode existingNode = Iterables.find(nodesForMethod, new Predicate<SliceNode>() {
-      public boolean apply(SliceNode arg) {
-        // All methods have unique line numbers, so this check might be sufficient
-        return (arg.getCodeLine().getLineNr() == node.getCodeLine().getLineNr());
-      }
-    }, null);
+    SliceNode existingNode = nodesForMethod.stream().filter(arg -> {
+      // All methods have unique line numbers, so this check might be sufficient
+      return (arg.getCodeLine().getLineNr() == node.getCodeLine().getLineNr());
+    }).findFirst().orElse(null);
 
     if (existingNode != null) {
       existingNode.setConstant(constant);
@@ -52,12 +54,10 @@ public class SliceTree {
             rs.getPreviousSliceNode().getCodeLine().getLineNr(), new String(rs.getPreviousRegister()));
 
         Collection<SliceNode> nodesForMethod = sliceNodes.get(rs.getBB().getMethod());
-        SliceNode existingNode = Iterables.find(nodesForMethod, new Predicate<SliceNode>() {
-          public boolean apply(SliceNode arg) {
-            // All methods have unique line numbers, so this check might be sufficient
-            return (arg.getCodeLine().getLineNr() == node.getCodeLine().getLineNr());
-          }
-        });
+        SliceNode existingNode = nodesForMethod.stream().filter(arg -> {
+          // All methods have unique line numbers, so this check might be sufficient
+          return (arg.getCodeLine().getLineNr() == node.getCodeLine().getLineNr());
+        }).findFirst().get();
 
         /*
          * When the node was previously inserted as constant and is now further tracked (i.e. external function),
@@ -113,12 +113,10 @@ public class SliceTree {
 
         for (final SliceNode linkNode : links.getValue()) {
           Collection<SliceNode> nodesForLinkMethod = sliceNodes.get(linkNode.getMethod());
-          SliceNode updatedLinkNode = Iterables.find(nodesForLinkMethod, new Predicate<SliceNode>() {
-            public boolean apply(SliceNode arg) {
-              // All methods have unique line numbers, so this check might be sufficient
-              return (arg.getCodeLine().getLineNr() == linkNode.getCodeLine().getLineNr());
-            }
-          });
+          SliceNode updatedLinkNode = nodesForLinkMethod.stream().filter(arg -> {
+            // All methods have unique line numbers, so this check might be sufficient
+            return (arg.getCodeLine().getLineNr() == linkNode.getCodeLine().getLineNr());
+          }).findFirst().get();
 
           updatedLinkSet.add(updatedLinkNode);
         }

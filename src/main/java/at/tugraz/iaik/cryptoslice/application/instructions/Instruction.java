@@ -46,7 +46,7 @@ public class Instruction {
   // The involved registers in this operation, eg, when calling a method.
   private List<byte[]> involvedRegisters = new ArrayList<>();
   // The involved fields in this operation, eg, when copying a variable into a register.
-  private List<byte[]> involvedFields = new ArrayList<byte[]>();
+  private final List<byte[]> involvedFields = new ArrayList<byte[]>();
   // Denotes whether this Instructions holds a constant
   private boolean hasConstant = false;
   // Denotes the label or some opcode that indicates where to jump to, eg, fill-array-data.
@@ -60,7 +60,7 @@ public class Instruction {
    * This is the value which gets assigned by the const-x opcodes, the constant which is
    * involved in some binary math opcode or the values during array initialization. May be null.
    */
-  private Constant constant = null;
+  private final Constant constant = null;
 
   public Instruction(CodeLine codeLine) {
     this.codeLine = codeLine;

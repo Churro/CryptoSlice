@@ -7,7 +7,6 @@ import at.tugraz.iaik.cryptoslice.analysis.slicing.SlicingCriterion;
 import at.tugraz.iaik.cryptoslice.analysis.slicing.SlicingPatternBT;
 import at.tugraz.iaik.cryptoslice.application.DetectionLogicError;
 import at.tugraz.iaik.cryptoslice.application.instructions.Constant;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -17,7 +16,7 @@ import org.stringtemplate.v4.ST;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Rule1 extends CryptoRule {
   /*
@@ -94,14 +93,11 @@ public class Rule1 extends CryptoRule {
         System.out.println("RAW: " + constant.toString());*/
 
       // Filter all constants that describe a cipher pattern (can be multiple, in case of if-else statement)
-      Iterable<Constant> cipherConstants = Iterables.filter(criterion.getSliceConstants().get(searchId), new Predicate<Constant>() {
-        @Override
-        public boolean apply(Constant constant) {
-          // The cipher has to be a String with non-null value
-          return (constant.getVarTypeDescription() != null && constant.getValue() != null &&
-              constant.getVarTypeDescription().equals("java/lang/String") && containsCipher(constant.getValue()));
-        }
-      });
+      Iterable<Constant> cipherConstants = criterion.getSliceConstants().get(searchId).stream().filter(constant -> {
+        // The cipher has to be a String with non-null value
+        return (constant.getVarTypeDescription() != null && constant.getValue() != null &&
+            constant.getVarTypeDescription().equals("java/lang/String") && containsCipher(constant.getValue()));
+      }).collect(Collectors.toList());
 
       if (Iterables.isEmpty(cipherConstants)) {
         LOGGER.error("No Cipher transformation string found!");
@@ -110,13 +106,10 @@ public class Rule1 extends CryptoRule {
       }
 
       // Filter constants that look like mode and padding (i.e. "/ECB/PKCS5Padding")
-      Iterable<Constant> cipherAppendices = Iterables.filter(criterion.getSliceConstants().get(searchId), new Predicate<Constant>() {
-        @Override
-        public boolean apply(Constant constant) {
-          return (constant.getVarTypeDescription() != null && constant.getValue() != null &&
-              constant.getVarTypeDescription().equals("java/lang/String")) && constant.getValue().matches("(?i)^\"/.+/.+\"$");
-        }
-      });
+      Iterable<Constant> cipherAppendices = criterion.getSliceConstants().get(searchId).stream()
+          .filter(constant -> (constant.getVarTypeDescription() != null && constant.getValue() != null &&
+              constant.getVarTypeDescription().equals("java/lang/String")) &&
+              constant.getValue().matches("(?i)^\"/.+/.+\"$")).collect(Collectors.toList());
 
       // Filter duplicate cipher names and prefer constants with lower fuzzy level
       Map<String, Constant> ciphers = new HashMap<>();

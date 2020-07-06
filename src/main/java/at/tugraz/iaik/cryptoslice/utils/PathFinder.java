@@ -90,10 +90,7 @@ public class PathFinder {
     Multimap<Method, SliceNode> sliceNodes = slicetree.getSliceNodes();
 
     // TODO: This is very inefficient. Better: Extract all nodes that are not in any others' links and different to the start node.
-    Set<SliceNode> leafs = new HashSet<>();
-    for (SliceNode n : sliceNodes.values()) {
-      leafs.add(n);
-    }
+    Set<SliceNode> leafs = new HashSet<>(sliceNodes.values());
 
     for (SliceNode node : sliceNodes.values()) {
       Table<String, String, Set<SliceNode>> links = node.getLinksFrom();

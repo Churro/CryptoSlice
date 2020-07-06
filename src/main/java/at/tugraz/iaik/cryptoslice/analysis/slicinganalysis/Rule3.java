@@ -9,7 +9,6 @@ import at.tugraz.iaik.cryptoslice.application.instructions.Constant;
 import at.tugraz.iaik.cryptoslice.utils.PathFinder;
 import at.tugraz.iaik.cryptoslice.utils.config.ConfigHandler;
 import at.tugraz.iaik.cryptoslice.utils.config.ConfigKeys;
-import com.google.common.base.Predicate;
 import com.google.common.collect.*;
 import org.stringtemplate.v4.ST;
 
@@ -32,29 +31,27 @@ public class Rule3 extends CryptoRule {
    * Can be found out using SliceNode.getBasicBlock().isCatch()
    * - Measure and sort by the instruction distance between the SecretKeySpec call and the const.
    */
-  private static Comparator<SliceNode> byConvention = new Comparator<SliceNode>() {
-    public int compare(SliceNode left, SliceNode right) {
-      Constant constLeft = left.getConstant();
-      Constant constRight = right.getConstant();
-      String varTypeLeft = constLeft.getVarTypeDescription();
-      String varTypeRight = constRight.getVarTypeDescription();
+  private static final Comparator<SliceNode> byConvention = (left, right) -> {
+    Constant constLeft = left.getConstant();
+    Constant constRight = right.getConstant();
+    String varTypeLeft = constLeft.getVarTypeDescription();
+    String varTypeRight = constRight.getVarTypeDescription();
 
-      int fuzzyCmp = Integer.compare(constLeft.getFuzzyLevel(), right.getConstant().getFuzzyLevel());
-      if (fuzzyCmp != 0) {
-        return fuzzyCmp;
-      }
-
-      if (!varTypeLeft.equals(varTypeRight)) {
-        // 1st order: Prefer either left or right if one contains a string
-        if (varTypeLeft.equals("java/lang/String")) return -1;
-        if (varTypeRight.equals("java/lang/String")) return 1;
-        // 2nd order: After strings, prefer arrays
-        if (varTypeLeft.equals("byte[]")) return -1;
-        if (varTypeRight.equals("byte[]")) return 1;
-      }
-
-      return 0;
+    int fuzzyCmp = Integer.compare(constLeft.getFuzzyLevel(), right.getConstant().getFuzzyLevel());
+    if (fuzzyCmp != 0) {
+      return fuzzyCmp;
     }
+
+    if (!varTypeLeft.equals(varTypeRight)) {
+      // 1st order: Prefer either left or right if one contains a string
+      if (varTypeLeft.equals("java/lang/String")) return -1;
+      if (varTypeRight.equals("java/lang/String")) return 1;
+      // 2nd order: After strings, prefer arrays
+      if (varTypeLeft.equals("byte[]")) return -1;
+      if (varTypeRight.equals("byte[]")) return 1;
+    }
+
+    return 0;
   };
 
   Rule3(Analysis analysis) {
@@ -257,14 +254,11 @@ public class Rule3 extends CryptoRule {
       return false;
 
     // Filter all constants that describe an asymmetric cipher pattern.
-    Constant cipherConstant = Iterables.find(criterion.getSliceConstants().get(searchId), new Predicate<Constant>() {
-      @Override
-      public boolean apply(Constant constant) {
-        // The cipher has to be a String with non-null value
-        return (constant.getVarTypeDescription() != null && constant.getValue() != null &&
-            constant.getVarTypeDescription().equals("java/lang/String") && containsCipher(constant.getValue()));
-      }
-    }, null);
+    Constant cipherConstant = criterion.getSliceConstants().get(searchId).stream().filter(constant -> {
+      // The cipher has to be a String with non-null value
+      return (constant.getVarTypeDescription() != null && constant.getValue() != null &&
+          constant.getVarTypeDescription().equals("java/lang/String") && containsCipher(constant.getValue()));
+    }).findFirst().orElse(null);
 
     // Having no constant at this point means that there is no asymmetric cipher.
     return (cipherConstant != null);

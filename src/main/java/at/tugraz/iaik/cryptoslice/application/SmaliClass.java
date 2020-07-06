@@ -166,10 +166,8 @@ public class SmaliClass {
         isAbstract = cl.contains(" abstract ".getBytes());
 
         byte[] tmp = Instruction.split(cl.getLine()).getLast();
-        List<String> packageNames = new ArrayList<String>();
-        String x[] = new String(ByteUtils.subbytes(tmp, 1, tmp.length-1)).split("/");
-        for (int i = 0; i < x.length-1; i++) // do not include the class name
-          packageNames.add(x[i]);
+        String[] x = new String(ByteUtils.subbytes(tmp, 1, tmp.length-1)).split("/");
+        List<String> packageNames = new ArrayList<String>(Arrays.asList(x).subList(0, x.length - 1));
         this.javaPackage.setName(packageNames);
       }
       else if (cl.startsWith(SOURCE)) { // .source "MagicSMSActivity.java"

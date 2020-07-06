@@ -7,13 +7,13 @@ import at.tugraz.iaik.cryptoslice.application.DetectionLogicError;
 import at.tugraz.iaik.cryptoslice.application.instructions.Constant;
 import at.tugraz.iaik.cryptoslice.application.methods.Method;
 import at.tugraz.iaik.cryptoslice.utils.PathFinder;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.stringtemplate.v4.ST;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Rule12 extends CryptoRule {
   Rule12(Analysis analysis) {
@@ -230,12 +230,9 @@ public class Rule12 extends CryptoRule {
       Multimap<Method, SliceNode> sliceNodes = tree.getSliceNodes();
 
       // Get all Map->put() nodes from the current getHeaders() slice
-      Iterable<SliceNode> mapPutNodes = Iterables.filter(sliceNodes.values(), new Predicate<SliceNode>() {
-        public boolean apply(SliceNode arg) {
-          return (arg.getConstant() != null && arg.getConstant().getValue() != null &&
-              arg.getConstant().getValue().startsWith("java/util/Map->put("));
-        }
-      });
+      Iterable<SliceNode> mapPutNodes = sliceNodes.values().stream().filter(arg ->
+          (arg.getConstant() != null && arg.getConstant().getValue() != null &&
+              arg.getConstant().getValue().startsWith("java/util/Map->put("))).collect(Collectors.toList());
 
       // Analyze each Map->put() call
       for (SliceNode mapPutNode : mapPutNodes) {
@@ -252,6 +249,7 @@ public class Rule12 extends CryptoRule {
             Constant constant = leaf.getConstant();
             if (constant.getValue().contains("uthorization")) {
               containsAuthorization = true;
+              break;
             }
           }
         }

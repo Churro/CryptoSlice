@@ -39,7 +39,7 @@ public class Field {
     FINAL("final".getBytes()),
     NATIVE("native".getBytes());
 
-    private byte[] text;
+    private final byte[] text;
 
     private Modifier(byte[] text) {
       this.text = text;

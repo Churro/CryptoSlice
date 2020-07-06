@@ -7,12 +7,12 @@ import at.tugraz.iaik.cryptoslice.application.CodeLine;
 import at.tugraz.iaik.cryptoslice.application.DetectionLogicError;
 import at.tugraz.iaik.cryptoslice.application.instructions.Constant;
 import at.tugraz.iaik.cryptoslice.application.methods.Method;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.stringtemplate.v4.ST;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Rule7 extends CryptoRule {
   Rule7(Analysis analysis) {
@@ -70,12 +70,10 @@ public class Rule7 extends CryptoRule {
        * One forward slice may contain multiple digest() invokes, based on the same MessageDigest object.
        */
       Multimap<Method, SliceNode> sliceNodes = tree.getSliceNodes();
-      Iterable<SliceNode> digestNodes = Iterables.filter(sliceNodes.values(), new Predicate<SliceNode>() {
-        public boolean apply(SliceNode arg) {
-          return (arg.getConstant() != null && arg.getConstant().getValue() != null &&
-              arg.getConstant().getValue().equals("java/security/MessageDigest->digest()"));
-        }
-      });
+      Iterable<SliceNode> digestNodes = sliceNodes.values().stream().filter(arg ->
+          (arg.getConstant() != null && arg.getConstant().getValue() != null &&
+              arg.getConstant().getValue().equals("java/security/MessageDigest->digest()")))
+          .collect(Collectors.toList());
 
       if (Iterables.isEmpty(digestNodes)) {
         LOGGER.debug("No MessageDigest->digest() found!");

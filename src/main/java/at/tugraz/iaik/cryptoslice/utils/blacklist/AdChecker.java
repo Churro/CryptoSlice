@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class AdChecker extends XMLDataSource<BlacklistEntry> {
-  private boolean filterAds = false;
+  private final boolean filterAds;
   private Set<BlacklistEntry> blacklistEntries = null;
 
   private static class AdCheckerHolder {

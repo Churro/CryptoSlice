@@ -76,7 +76,7 @@ public class Constant {
 
     private final String text;
 
-    private Type(String text) {
+    Type(String text) {
       this.text = text;
     }
 
@@ -95,7 +95,7 @@ public class Constant {
 
     private final byte[] text;
 
-    private MetaDataLine(byte[] text) {
+    MetaDataLine(byte[] text) {
       this.text = text;
     }
 
@@ -250,7 +250,7 @@ public class Constant {
   private static final Logger LOGGER = LoggerFactory.getLogger(Constant.class);
 
   private final CodeLine cl;
-  private int fuzzyLevel;
+  private final int fuzzyLevel;
   private final LinkedList<BasicBlock> path;
   private final int searchId;
 
@@ -390,13 +390,12 @@ public class Constant {
           if (resourceName != null) {
             LOGGER.debug("Associated resource ID " + unparsedValue + " with resource name " + resourceName);
             String resVal = ResourceUtils.findStringValueForResourceName(bytecodeDir, resourceName);
+            varType = new VarType("Ljava/lang/String".getBytes());
             if (resVal != null) {
               // Replace the resource offset with the real constant string
-              varType = new VarType("Ljava/lang/String".getBytes());
               value = "\"" + resVal + "\"";
             } else {
               // If the resource is no String (e.g. raw resource), exchange the ID with the resourceName
-              varType = new VarType("Ljava/lang/String".getBytes());
               value = "\"" + resourceName + "\"";
             }
           }

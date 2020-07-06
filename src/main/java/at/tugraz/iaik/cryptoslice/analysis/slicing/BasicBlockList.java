@@ -22,11 +22,11 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 public class BasicBlockList {
-  private LinkedList<BasicBlock> path = new LinkedList<>();
+  private final LinkedList<BasicBlock> path = new LinkedList<>();
   // Holds information about the current path, eg, what register is tracked where in the path
-  private LinkedList<byte[]> pathState = new LinkedList<byte[]>();
+  private final LinkedList<byte[]> pathState = new LinkedList<byte[]>();
   private LinkedList<BasicBlock> previousPath = null;
-  private HashSet<BasicBlock> visited = new HashSet<>();
+  private final HashSet<BasicBlock> visited = new HashSet<>();
   private boolean firstTime = true;
   private final boolean isBackwardSearch;
 

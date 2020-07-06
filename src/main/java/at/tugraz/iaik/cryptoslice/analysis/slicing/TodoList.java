@@ -5,8 +5,6 @@ import at.tugraz.iaik.cryptoslice.application.SyntaxException;
 import at.tugraz.iaik.cryptoslice.application.methods.BasicBlock;
 import at.tugraz.iaik.cryptoslice.utils.config.ConfigHandler;
 import at.tugraz.iaik.cryptoslice.utils.config.ConfigKeys;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,28 +97,28 @@ public class TodoList {
         LOGGER.debug("linkDuplicateTracks: Already searched this RS. There is no need to track it again.");
 
         Collection<SliceNode> sliceNodes = slicer.getCurrentSliceTree().getSliceNodes().values();
-        SliceNode followUpNode = Iterables.find(sliceNodes, new Predicate<SliceNode>() {
-          public boolean apply(SliceNode arg) {
-              /*
-               * Look for a linked node that matches a previously tracked RegisterSearch in the following aspects:
-               * - The target register is the same as now (or before with rs2, respectively).
-               * - The originating properties (previousRegister, previousSliceNode) correspond to the previously tracked object.
-               * - The followUpNode needs to be in the same BB as the one we were previously about to track.
-               *
-               * This last assumption is somewhat bogus because, in theory, it is possible that the BB was just
-               * traversed and followUpNode has been found in the subsequent BB. However, we need this check in order
-               * to select the "correct" followUpNode, out of multiple available.
-               */
-            if (rs2.getPreviousRegister() == null)
-              return false;
+        SliceNode followUpNode = sliceNodes.stream().filter(arg -> {
+          /*
+           * Look for a linked node that matches a previously tracked RegisterSearch in the following aspects:
+           * - The target register is the same as now (or before with rs2, respectively).
+           * - The originating properties (previousRegister, previousSliceNode) correspond to the previously tracked
+           * object.
+           * - The followUpNode needs to be in the same BB as the one we were previously about to track.
+           *
+           * This last assumption is somewhat bogus because, in theory, it is possible that the BB was just
+           * traversed and followUpNode has been found in the subsequent BB. However, we need this check in order
+           * to select the "correct" followUpNode, out of multiple available.
+           */
+          if (rs2.getPreviousRegister() == null)
+            return false;
 
-            Set<SliceNode> linkNodes = arg.getLinksFrom().get(new String(rs2.getPreviousRegister()), new String(rs2.getRegister()));
+          Set<SliceNode> linkNodes = arg.getLinksFrom().get(new String(rs2.getPreviousRegister()),
+              new String(rs2.getRegister()));
 
-            return (linkNodes != null && linkNodes.contains(rs2.getPreviousSliceNode()) &&
-                arg.getBasicBlock() != null && arg.getBasicBlock().equals(rs2.getBB()) &&
-                !arg.getCodeLine().equals(rs.getPreviousSliceNode().getCodeLine())); // avoids self-cycles
-          }
-        }, null);
+          return (linkNodes != null && linkNodes.contains(rs2.getPreviousSliceNode()) &&
+              arg.getBasicBlock() != null && arg.getBasicBlock().equals(rs2.getBB()) &&
+              !arg.getCodeLine().equals(rs.getPreviousSliceNode().getCodeLine())); // avoids self-cycles
+        }).findFirst().orElse(null);
 
         // followUpNode is null if no node followed the looked up RegisterSearch
         if (followUpNode != null)
@@ -283,13 +281,13 @@ public class TodoList {
   }
 
   public static class RegisterSearch {
-    private byte[] register;
+    private final byte[] register;
     private final byte[][] fieldInRegister;
     private final BasicBlock bb;
     private final int index;
     private final int fuzzyLevel;
     private int fuzzyOffset;
-    private LinkedList<BasicBlock> path;
+    private final LinkedList<BasicBlock> path;
     private SliceNode previousSliceNode;
     private byte[] previousRegister;
 
@@ -412,7 +410,7 @@ public class TodoList {
     private final byte[][] ci;
     private final int fuzzyLevel;
     private final int fuzzyLevelOffset;
-    private LinkedList<BasicBlock> path;
+    private final LinkedList<BasicBlock> path;
     private Integer hashCode = null;
     private final SliceNode previousSliceNode;
     private final byte[] previousRegister;

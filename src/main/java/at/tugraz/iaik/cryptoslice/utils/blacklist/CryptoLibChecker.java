@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class CryptoLibChecker extends XMLDataSource<BlacklistEntry> {
-  private boolean filterLibs = false;
+  private final boolean filterLibs;
   private Set<BlacklistEntry> blacklistEntries = null;
 
   private static class CryptoLibCheckerHolder {

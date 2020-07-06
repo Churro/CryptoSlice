@@ -7,7 +7,6 @@ import at.tugraz.iaik.cryptoslice.application.CodeLine;
 import at.tugraz.iaik.cryptoslice.application.DetectionLogicError;
 import at.tugraz.iaik.cryptoslice.application.instructions.Constant;
 import at.tugraz.iaik.cryptoslice.application.methods.Method;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.stringtemplate.v4.ST;
 
@@ -70,12 +69,12 @@ public class Rule7 extends CryptoRule {
        * One forward slice may contain multiple digest() invokes, based on the same MessageDigest object.
        */
       Multimap<Method, SliceNode> sliceNodes = tree.getSliceNodes();
-      Iterable<SliceNode> digestNodes = sliceNodes.values().stream().filter(arg ->
+      List<SliceNode> digestNodes = sliceNodes.values().stream().filter(arg ->
           (arg.getConstant() != null && arg.getConstant().getValue() != null &&
               arg.getConstant().getValue().equals("java/security/MessageDigest->digest()")))
           .collect(Collectors.toList());
 
-      if (Iterables.isEmpty(digestNodes)) {
+      if (digestNodes.isEmpty()) {
         LOGGER.debug("No MessageDigest->digest() found!");
         messageDigestReport.add("abortMsg", "No MessageDigest->digest() found!");
         ruleReport.add("searchIds", messageDigestReport);

@@ -9,12 +9,12 @@ import at.tugraz.iaik.cryptoslice.application.DetectionLogicError;
 import at.tugraz.iaik.cryptoslice.application.instructions.Constant;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.stringtemplate.v4.ST;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -93,20 +93,20 @@ public class Rule1 extends CryptoRule {
         System.out.println("RAW: " + constant.toString());*/
 
       // Filter all constants that describe a cipher pattern (can be multiple, in case of if-else statement)
-      Iterable<Constant> cipherConstants = criterion.getSliceConstants().get(searchId).stream().filter(constant -> {
+      List<Constant> cipherConstants = criterion.getSliceConstants().get(searchId).stream().filter(constant -> {
         // The cipher has to be a String with non-null value
         return (constant.getVarTypeDescription() != null && constant.getValue() != null &&
             constant.getVarTypeDescription().equals("java/lang/String") && containsCipher(constant.getValue()));
       }).collect(Collectors.toList());
 
-      if (Iterables.isEmpty(cipherConstants)) {
+      if (cipherConstants.isEmpty()) {
         LOGGER.error("No Cipher transformation string found!");
         ruleReport.add("searchIds", cipherInstanceReport);
         continue;
       }
 
       // Filter constants that look like mode and padding (i.e. "/ECB/PKCS5Padding")
-      Iterable<Constant> cipherAppendices = criterion.getSliceConstants().get(searchId).stream()
+      List<Constant> cipherAppendices = criterion.getSliceConstants().get(searchId).stream()
           .filter(constant -> (constant.getVarTypeDescription() != null && constant.getValue() != null &&
               constant.getVarTypeDescription().equals("java/lang/String")) &&
               constant.getValue().matches("(?i)^\"/.+/.+\"$")).collect(Collectors.toList());
@@ -127,7 +127,7 @@ public class Rule1 extends CryptoRule {
         String cipher = cipherConstant.getValue();
 
         // Check if we found appendices and have a "short" (no mode/padding given) symmetric block ciphers.
-        if (!Iterables.isEmpty(cipherAppendices) &&
+        if (!cipherAppendices.isEmpty() &&
             searchValuePatternInList(SYMMETRIC_BLOCK_CIPHERS, cipher, "\"$")) {
           for (Constant appendix : cipherAppendices) {
             String cipherAppended = stripEnclosingQuotes(cipher).concat(appendix.getValue().substring(1));

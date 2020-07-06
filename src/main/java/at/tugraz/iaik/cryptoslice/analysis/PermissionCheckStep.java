@@ -1,127 +1,79 @@
 package at.tugraz.iaik.cryptoslice.analysis;
 
 import at.tugraz.iaik.cryptoslice.application.Application;
-import at.tugraz.iaik.cryptoslice.application.CodeLine;
-import at.tugraz.iaik.cryptoslice.application.SmaliClass;
-import at.tugraz.iaik.cryptoslice.application.instructions.Instruction;
-import at.tugraz.iaik.cryptoslice.application.instructions.InstructionType;
-import at.tugraz.iaik.cryptoslice.utils.PermissionMapLoader;
-import at.tugraz.iaik.cryptoslice.utils.config.ConfigHandler;
-import at.tugraz.iaik.cryptoslice.utils.config.ConfigKeys;
-import com.google.common.collect.Multimap;
+import at.tugraz.iaik.cryptoslice.utils.manifest.AndroidManifest;
+import com.google.common.collect.ImmutableMap;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.io.File;
 import java.util.List;
-import java.util.Map;
 
-// Map permissions to API calls
+// Check for dangerous permissions
 public class PermissionCheckStep extends Step {
-  private final Multimap<String, List<String>> permissionMap;
-  private final List<CodeLine> invocationList = new ArrayList<>();
-  private List<SmaliClass> smaliFiles;
+  // https://developer.android.com/reference/android/Manifest.permission.html
+  private static final ImmutableMap<String, String> DANGEROUS_PERMISSIONS = ImmutableMap.<String, String> builder()
+      .put("ACCEPT_HANDOVER", "Can take over active calls") // 28
+      .put("ACCESS_BACKGROUND_LOCATION", "Can access location in the background") // 29
+      .put("ACCESS_COARSE_LOCATION", "Can access the approximate location of a device") // 1
+      .put("ACCESS_FINE_LOCATION", "Can access the precise location of a device") // 1
+      .put("ACCESS_MEDIA_LOCATION", "Can access any geographic locations persisted in the user's shared collection") // 29
+      .put("ACTIVITY_RECOGNITION", "Can recognize physical activity") // 29
+      .put("ADD_VOICEMAIL", "Can add voicemails into the system") // 14
+      .put("ANSWER_PHONE_CALLS", "Can answer an incoming phone call") // 26
+      .put("BODY_SENSORS", "Can access data from health tracking sensors") // 20
+      .put("CALL_PHONE", "Can initiate a phone call without going through the Dialer user interface") // 1
+      .put("CAMERA", "Can access the camera device") // 1
+      .put("GET_ACCOUNTS", "Can access the list of accounts in the Accounts Service") // 1
+      .put("PROCESS_OUTGOING_CALLS", "Can see and redirect outgoing calls") // 1 -> 29
+      .put("READ_CALENDAR", "Can read the user's calendar data") // 1
+      .put("READ_CALL_LOG", "Can read the user's call log") // 16
+      .put("READ_CONTACTS", "Can read the user's contacts data") // 1
+      .put("READ_EXTERNAL_STORAGE", "Can read from external storage") // 16
+      .put("READ_PHONE_NUMBERS", "Can read access the device's phone number(s)") // 26
+      .put("READ_PHONE_STATE", "Can read phone number(s), current cellular network information, status of any ongoing calls") // 1
+      .put("READ_SMS", "Can read SMS messages") // 1
+      .put("RECEIVE_MMS", "Can monitor incoming MMS messages") // 1
+      .put("RECEIVE_SMS", "Can receive SMS messages") // 1
+      .put("RECEIVE_WAP_PUSH", "Can receive WAP push messages") // 1
+      .put("RECORD_AUDIO", "Can record audio") // 1
+      .put("SEND_SMS", "Can send SMS messages") // 1
+      .put("USE_SIP", "Can use SIP service") // 9
+      .put("WRITE_CALENDAR", "Can write the user's calendar data") // 1
+      .put("WRITE_CALL_LOG", "Can write (but not read) the user's call log data") // 16
+      .put("WRITE_CONTACTS", "Can write the user's contacts data") // 1
+      .put("WRITE_EXTERNAL_STORAGE", "Can write to external storage") // 4
+      .build();
 
   public PermissionCheckStep(boolean enabled) {
     this.name = "Permission Check";
-    this.permissionMap = PermissionMapLoader.getInstance().getPermissionMap();
     this.enabled = enabled;
   }
 
   @Override
   public boolean doProcessing(Analysis analysis) throws AnalysisException {
     Application app = analysis.getApp();
-    invocationList.clear();
-    //this.heuristicResults = new ArrayList<>();
-    this.smaliFiles = app.getAllSmaliClasses();
+    File manifest = app.getAndroidManifestFile();
 
-    if (permissionMap.isEmpty()) {
-      LOGGER.warn("No API calls to search. Stopping analysis.");
-      return false;
+    LOGGER.debug("Checking AndroidManifest.xml of " + app.getApplicationName());
+
+    if (AndroidManifest.isDebuggable(manifest)) {
+      System.out.println("App is debuggable -> Sensitive data can be logged while the application runs.");
     }
 
-    if (ConfigHandler.getInstance().getBooleanConfigValue(ConfigKeys.ANALYSIS_FILTER_ADNETWORKS) ||
-        ConfigHandler.getInstance().getBooleanConfigValue(ConfigKeys.ANALYSIS_FILTER_CRYPTOLIBS)) {
-      LOGGER.warn("Set " + ConfigKeys.ANALYSIS_FILTER_ADNETWORKS.toString() + " and " +
-          ConfigKeys.ANALYSIS_FILTER_CRYPTOLIBS.toString() + " to false. Otherwise not all API calls might be found!");
+    if (AndroidManifest.allowsBackup(manifest)) {
+      System.out.println("App allows backups -> Data / files may remain on the device even after app uninstall.");
     }
 
-    LOGGER.debug("Analyzing " + app.getApplicationName() + " for " + permissionMap.size() + " API calls.");
-    getInvocations();
+    // https://developer.android.com/guide/topics/manifest/uses-sdk-element.html
+    //System.out.println(AndroidManifest.getMinSdkVersion(app.getAndroidManifestFile()));
 
-    // TODO: Start based on permissions in the AndroidManifest file. Otherwise, we also find calls within libs even if
-    // they are not actually used, e.g., Android Support
-    for (Map.Entry<String, List<String>> apiCallAndPerm : permissionMap.entries()) {
-      String apiCall = apiCallAndPerm.getKey();
-      int parameterStart = apiCall.indexOf("(");
-      String classAndMethod = (parameterStart == -1 ? apiCall : apiCall.substring(0, parameterStart)); // missing ( => no parameters
-      int methodStart = classAndMethod.lastIndexOf("/");
-      String className = classAndMethod.substring(0, methodStart);
-      String methodName = classAndMethod.substring(methodStart + 1);
-
-      for (CodeLine cl : invocationList) {
-        Instruction i = cl.getInstruction();
-
-        if (Arrays.equals(i.getCalledClassAndMethodWithParameter()[0], className.getBytes()) &&
-            Arrays.equals(i.getCalledClassAndMethodWithParameter()[1], methodName.getBytes())) {
-
-          List<String> permCombinations = apiCallAndPerm.getValue();
-          if (!permCombinations.isEmpty())
-            LOGGER.info("INVOKE in " + cl.getSmaliClass().getFullClassName(true) + " requires " + permCombinations.toString() + " on cl \n" + cl);
-
-          //LOGGER.info("Found INVOKE pattern in " + cl.getSmaliClass().getFullClassName(true) + " on cl " + cl); // sf.getFile().getAbsolutePath()
-          //heuristicResults.add(new HResult(pattern, cl));
-        }
+    List<String> permissions = AndroidManifest.getPermissions(manifest);
+    for (String permission : permissions) {
+      String full = permission.substring(19); // trim android.permission.
+      if (DANGEROUS_PERMISSIONS.containsKey(full)) {
+        System.out.println(full + ": " + DANGEROUS_PERMISSIONS.get(full) + ".");
       }
     }
-
-
-
-    /*for (Map.Entry<String, Set<HPattern>> patternGroup : heuristicPatterns.entrySet()) {
-      switch (patternGroup.getKey()) {
-        case "INVOKE":
-          checkInvoke(patternGroup.getValue());
-          break;
-        case "SMALI":
-          checkSmali(patternGroup.getValue());
-          break;
-        case "SUPERCLASS":
-          checkSuperclass(patternGroup.getValue());
-          break;
-        case "PATCHED_CODE":
-          checkPatchedCode(patternGroup.getValue());
-          break;
-        case "METHOD_DECLARATION":
-          checkMethodDeclaration(patternGroup.getValue());
-          break;
-      }
-    }
-
-    LOGGER.info("Finished heuristic search for Application " + app.getApplicationName() +
-        " with " + heuristicResults.size() + " results");
-    analysis.setHeuristicResults(heuristicResults);*/
 
     return true;
-  }
-
-  private void getInvocations() {
-    if (!invocationList.isEmpty()) {
-      return;
-    }
-
-    for (SmaliClass sf : smaliFiles) {
-      List<CodeLine> codeLines = sf.getAllCodeLines();
-
-      for (CodeLine cl : codeLines) {
-        Instruction i = cl.getInstruction();
-        if (i.getType() == InstructionType.INVOKE || i.getType() == InstructionType.INVOKE_STATIC) {
-          invocationList.add(cl);
-          /*if (Arrays.equals(i.getCalledClassAndMethodWithParameter()[0], cm[0]) &&
-              Arrays.equals(i.getCalledClassAndMethodWithParameter()[1], cm[1])) {
-            LOGGER.info("Found INVOKE pattern in " + sf.getFullClassName(true) + " on cl " + cl); // sf.getFile().getAbsolutePath()
-            heuristicResults.add(new HResult(pattern, cl));
-          }*/
-        }
-      }
-    }
   }
 }

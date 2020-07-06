@@ -186,4 +186,8 @@ public class Application {
   public void setSmaliClassLabel(int smaliClassLabel) {
     this.smaliClassLabel = smaliClassLabel;
   }
+
+  public File getAndroidManifestFile() {
+    return new File(bytecodeDecompiledDirectory, "AndroidManifest.xml");
+  }
 }

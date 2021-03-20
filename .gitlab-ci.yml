@@ -1,4 +1,21 @@
 image: maven:3-jdk-11-slim
 
+variables:
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+
+cache:
+  paths:
+    - .m2/repository
+
 build:
-  script: "mvn package -B"
+  stage: build
+  script:
+    #- mvn $MAVEN_CLI_OPTS verify
+    - mvn --batch-mode --update-snapshots verify
+  artifacts:
+    name: "$CI_PROJECT_NAME"
+    paths:
+      - target/apps
+      - target/conf
+      - target/CryptoSlice-1.0-SNAPSHOT-jar-with-dependencies.jar

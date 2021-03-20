@@ -12,20 +12,20 @@
     <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <commons-io.version>2.6</commons-io.version>
-    <guava.version>27.0.1-jre</guava.version>
-    <httpcore.version>4.4.12</httpcore.version>
-    <ST4.version>4.2</ST4.version>
+    <commons-io.version>2.7</commons-io.version>
+    <guava.version>30.1.1-jre</guava.version>
+    <httpcore.version>4.4.14</httpcore.version>
+    <ST4.version>4.3.1</ST4.version>
     <largetext.version>0.2.0</largetext.version>
 
     <!-- Logging -->
     <logback.version>1.2.3</logback.version>
-    <slf4j.version>1.7.29</slf4j.version>
+    <slf4j.version>1.7.30</slf4j.version>
 
     <!-- Maven plugins -->
-    <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
+    <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
-    <maven-jar-plugin.version>3.1.2</maven-jar-plugin.version>
+    <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
   </properties>
 
@@ -91,6 +91,27 @@
           <target>${java.version}</target>
         </configuration>
       </plugin>
+
+      <!--<plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>2.5.2</version>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <configuration>
+              <file>${basedir}/lib/apktool_2.5.0.jar</file>
+              <groupId>apktool</groupId>
+              <artifactId>apktool</artifactId>
+              <version>2.5.0</version>
+              <packaging>jar</packaging>
+            </configuration>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>-->
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

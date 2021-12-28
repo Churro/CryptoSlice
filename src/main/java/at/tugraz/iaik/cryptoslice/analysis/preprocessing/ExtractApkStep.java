@@ -7,6 +7,8 @@ import at.tugraz.iaik.cryptoslice.application.Application;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -36,22 +38,29 @@ public class ExtractApkStep extends Step {
   }
 
   private static void extractApk(File archive, File dest) throws IOException {
-    ZipFile zipFile = new ZipFile(archive);
-    Enumeration<? extends ZipEntry> entries = zipFile.entries();
-    while (entries.hasMoreElements()) {
-      ZipEntry entry = entries.nextElement();
+    Path destPath = dest.toPath();
 
-      File entryDestination = new File(dest,  entry.getName());
-      entryDestination.getParentFile().mkdirs();
+    try (ZipFile zipFile = new ZipFile(archive, ZipFile.OPEN_READ)) {
+      Enumeration<? extends ZipEntry> entries = zipFile.entries();
+      while (entries.hasMoreElements()) {
+        ZipEntry entry = entries.nextElement();
+        Path entryPath = destPath.resolve(entry.getName());
+        if (!entryPath.normalize().startsWith(dest.toPath())) {
+          throw new IOException("Zip entry attempted path traversal");
+        }
 
-      InputStream in = zipFile.getInputStream(entry);
-      OutputStream out = new FileOutputStream(entryDestination);
-      IOUtils.copy(in, out);
+        if (entry.isDirectory()) {
+          Files.createDirectories(entryPath);
+        } else {
+          Files.createDirectories(entryPath.getParent());
 
-      in.close();
-      out.close();
+          try (InputStream in = zipFile.getInputStream(entry)) {
+            try (OutputStream out = new FileOutputStream(entryPath.toFile())) {
+              IOUtils.copy(in, out);
+            }
+          }
+        }
+      }
     }
-
-    zipFile.close();
   }
 }

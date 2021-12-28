@@ -1,1 +1,0 @@
-mvn install:install-file -Dfile=apktool_2.5.0.jar -DgroupId=apktool -DartifactId=apktool -Dversion=2.5.0 -Dpackaging=jar -DlocalRepositoryPath=.

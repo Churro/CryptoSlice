@@ -59,7 +59,7 @@ public class DecompileApkStep extends Step {
         decoder.setOutDir(destination);
         decoder.setApkFile(apk);
         decoder.setFrameworkDir(frameworkDir);
-        decoder.setAnalysisMode(true, false); // decode resources with original API level
+        decoder.setAnalysisMode(true); // decode resources with original API level
 
         /*if (XMLTPatternSource.getInstance().isForwardPatternProvided())
           decoder.setDecodeResources((short) 0x0101); // DECODE_RESOURCES_FULL, default value of Apktool
